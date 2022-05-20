@@ -1,0 +1,5 @@
+.DS_Store
+scenario_*.csv
+test.csv
+bin/
+tests/__debug_bin
