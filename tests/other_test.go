@@ -916,10 +916,10 @@ func TestHandleDstAddressOutput(t *testing.T) {
 				fmt.Printf("got = %+v\n", got)
 				fmt.Printf("want = %+v\n", tt.want)
 				fmt.Printf("len(got) = %+v, len(want) = %+v\n", len(got), len(tt.want))
-				t.Error("HandleSrcAddressOutput()\n")
+				t.Error("HandleDstAddressOutput()\n")
 			}
 			if got1 != tt.want1 {
-				t.Errorf("HandleSrcAddressOutput() got1 = %v, want %v", got1, tt.want1)
+				t.Errorf("HandleDstAddressOutput() got1 = %v, want %v", got1, tt.want1)
 			}
 		})
 	}

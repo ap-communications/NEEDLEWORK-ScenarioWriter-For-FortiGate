@@ -472,6 +472,7 @@ var (
 		{
 			Name:        `"wifi-default"`,
 			URLTableNum: "",
+			FtgdFilter: true,
 		},
 		{
 			Name:        `"wb-sniffer-profile"`,
@@ -1081,6 +1082,42 @@ var (
 			Env:               "test",
 		},
 	}
+	testArgs23 = args{
+		allInfo: app.AllInfo{
+			Services:          []string{`"HTTP"`, `"IMAP"`, `"HTTPS"`},
+			Act:               "accept",
+			WfpName:           `"wifi-default"`,
+			ServiceInfoAll:    testServiceInfoAll,
+			ServiceGrpInfoAll: nil,
+			VInfo: []app.VipInfo{
+				{
+					Name:        "op_portforward",
+					ExtIP:       "1.1.1.8",
+					MappedIP:    "200.200.200.233",
+					SrcFilter:   nil,
+					Service:     nil,
+					PortForward: true,
+					ExtPort:     "443",
+					MappedPort:  "443",
+					Protocol:    "tcp",
+				},
+				{
+					Name:        "op_portforward",
+					ExtIP:       "1.1.1.8",
+					MappedIP:    "200.200.200.233",
+					SrcFilter:   nil,
+					Service:     []string{`"HTTP"`},
+				},
+			},
+			VipGrpInfo:        nil,
+			WfProfileInfoAll:  testWfProfileInfoAll,
+			WfFilterInfoAll:   testWfFilterInfoAll,
+			AVProfileInfoAll:  testAVProfileInfoAll,
+			ProxyModeProtocol: app.ProxyModeProtocol,
+			ServicePort:       app.ServicePort,
+			Env:               "test",
+		},
+	}
 )
 
 func Test_HandleProtocolOutput(t *testing.T) {
@@ -1193,6 +1230,11 @@ func Test_HandleProtocolOutput(t *testing.T) {
 			name: "dns-tcp-port-different",
 			args: testArgs22,
 			want: []string{"dnst", "dns", "undefined", "undefined", "undefined", "dns", "dnst", "dns", "undefined", "dns", "dnst", "dns", "undefined", "undefined"},
+		},
+		{
+			name: "ftgd-block-http&https",
+			args: testArgs23,
+			want: []string{"undefined", "undefined", "https", "http", "undefined", "undefined"},
 		},
 	}
 	for _, tt := range tests {
@@ -1313,6 +1355,11 @@ func TestHandleSrcPortOutput(t *testing.T) {
 			args: testArgs22,
 			want: []string{"", "", "undefined", "undefined", "undefined", "", "", "", "undefined", "", "", "", "undefined", "undefined"},
 		},
+		{
+			name: "ftgd-block-http&https",
+			args: testArgs23,
+			want: []string{"undefined", "undefined", "", "", "undefined", "undefined"},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -1421,6 +1468,11 @@ func Test_HandleDstNATAddrOutput(t *testing.T) {
 			name: "dns-tcp-port-different",
 			args: testArgs22,
 			want: []string{"1.1.1.10", "1.1.1.10", "undefined", "undefined", "undefined", "1.1.1.11", "1.1.1.8", "1.1.1.8", "undefined", "1.1.1.8", "1.1.1.8", "1.1.1.8", "undefined", "undefined"},
+		},
+		{
+			name: "ftgd-block-http&https",
+			args: testArgs23,
+			want: []string{"undefined", "undefined", "1.1.1.8", "1.1.1.8", "undefined", "undefined"},
 		},
 	}
 	for _, tt := range tests {
@@ -1531,6 +1583,11 @@ func Test_HandleDstNATPortOutput(t *testing.T) {
 			args: testArgs22,
 			want: []string{"", "", "undefined", "undefined", "undefined", "53", "", "", "undefined", "", "", "", "undefined", "undefined"},
 		},
+		{
+			name: "ftgd-block-http&https",
+			args: testArgs23,
+			want: []string{"undefined", "undefined", "443", "", "undefined", "undefined"},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -1584,7 +1641,6 @@ func Test_HandleDstPortOutput(t *testing.T) {
 					AvpName:           "",
 					ServiceInfoAll:    testServiceInfoAll,
 					ServiceGrpInfoAll: testServiceGrpInfoAll,
-
 					VInfo:             nil,
 					VipGrpInfo:        nil,
 					WfProfileInfoAll:  nil,
@@ -1607,7 +1663,6 @@ func Test_HandleDstPortOutput(t *testing.T) {
 					AvpName:           "",
 					ServiceInfoAll:    testServiceInfoAll,
 					ServiceGrpInfoAll: testServiceGrpInfoAll,
-
 					VInfo:             nil,
 					VipGrpInfo:        nil,
 					WfProfileInfoAll:  nil,
@@ -1630,7 +1685,6 @@ func Test_HandleDstPortOutput(t *testing.T) {
 					AvpName:           "",
 					ServiceInfoAll:    testServiceInfoAll,
 					ServiceGrpInfoAll: testServiceGrpInfoAll,
-
 					VInfo:             nil,
 					VipGrpInfo:        nil,
 					WfProfileInfoAll:  nil,
@@ -1653,7 +1707,6 @@ func Test_HandleDstPortOutput(t *testing.T) {
 					AvpName:           "",
 					ServiceInfoAll:    testServiceInfoAll,
 					ServiceGrpInfoAll: testServiceGrpInfoAll,
-
 					VInfo:             nil,
 					VipGrpInfo:        nil,
 					WfProfileInfoAll:  nil,
@@ -1760,6 +1813,11 @@ func Test_HandleDstPortOutput(t *testing.T) {
 			name: "dns-tcp-port-different",
 			args: testArgs22,
 			want: []string{"5312", "53", "undefined", "undefined", "undefined", "53", "5312", "53", "undefined", "53", "5312", "53", "undefined", "undefined"},
+		},
+		{
+			name: "ftgd-block-http&https",
+			args: testArgs23,
+			want: []string{"undefined", "undefined", "443", "80", "undefined", "undefined"},
 		},
 	}
 	for _, tt := range tests {
@@ -1870,6 +1928,11 @@ func Test_HandleOtherSettingOutput(t *testing.T) {
 			args: testArgs22,
 			want: []string{"", "", "undefined", "undefined", "undefined", "", "", "", "undefined", "", "", "", "undefined", "undefined"},
 		},
+		{
+			name: "ftgd-block-http&https",
+			args: testArgs23,
+			want: []string{"undefined", "undefined", "", "", "undefined", "undefined"},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -1978,6 +2041,11 @@ func Test_HandleURLDomainOutput(t *testing.T) {
 			name: "dns-tcp-port-different",
 			args: testArgs22,
 			want: []string{"", "", "undefined", "undefined", "undefined", "", "", "", "undefined", "", "", "", "undefined", "undefined"},
+		},
+		{
+			name: "ftgd-block-http&https",
+			args: testArgs23,
+			want: []string{"undefined", "undefined", "", "", "undefined", "undefined"},
 		},
 	}
 	for _, tt := range tests {
@@ -2088,6 +2156,11 @@ func Test_HandleAntiVirusOutput(t *testing.T) {
 			args: testArgs22,
 			want: []string{"", "", "undefined", "undefined", "undefined", "", "", "", "undefined", "", "", "", "undefined", "undefined"},
 		},
+		{
+			name: "ftgd-block-http&https",
+			args: testArgs23,
+			want: []string{"undefined", "undefined", "", "", "undefined", "undefined"},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -2196,6 +2269,11 @@ func Test_HandleExpectOutput(t *testing.T) {
 			name: "dns-tcp-port-different",
 			args: testArgs22,
 			want: []string{"pass", "pass", "undefined", "undefined", "undefined", "pass", "pass", "pass", "undefined", "pass", "pass", "pass", "undefined", "undefined"},
+		},
+		{
+			name: "ftgd-block-http&https",
+			args: testArgs23,
+			want: []string{"undefined", "undefined", "block", "block", "undefined", "undefined"},
 		},
 	}
 	for _, tt := range tests {
