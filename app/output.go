@@ -21,26 +21,26 @@ func HandleProtocolOutput(allInfo AllInfo) []string {
 	return protocolSlice
 }
 
-func handleFWIPOutput(intf, env string, IntfInfoAll []IntfInfo) string {
-	intfInfo := confirmIntfWithIntfInfo(intf, env, IntfInfoAll)
+func handleFWIPOutput(intf, addr string, aI AllInfo) string {
+	intfInfo := confirmIntfWithIntfInfo(intf, addr, aI)
 	return intfInfo.Address
 }
 
-func handleVLANIDOutput(intf, env string, intfInfoAll []IntfInfo) string {
-	intfInfo := confirmIntfWithIntfInfo(intf, env, IntfInfoAll)
+func handleVLANIDOutput(intf, addr string, aI AllInfo) string {
+	intfInfo := confirmIntfWithIntfInfo(intf, addr, aI)
 	return strconv.Itoa(intfInfo.VLANID)
 }
 
-func HandleSrcAddressOutput(intf string, addrs []string, AddressInfoAll []AddressInfo, AddrGrpInfoAll []AddrGrpInfo, SRouteInfoAll []SRouteInfo, IntfInfoAll []IntfInfo, usedAddress []string, aI AllInfo) ([]string, bool) {
+func HandleSrcAddressOutput(intf string, addrs []string, usedAddress []string, aI AllInfo) ([]string, bool) {
 	var addrSlice []string
 	var srcFQDNFlag bool
 	for _, addr := range addrs {
 		var aSlice []string
 		var addrBool bool
 		var flags bool
-		aSlice, addrBool, flags = handleAddress(addr, intf, AddressInfoAll, SRouteInfoAll, IntfInfoAll, usedAddress, aI)
+		aSlice, addrBool, flags = handleAddress(addr, intf, usedAddress, aI)
 		if !addrBool {
-			aSlice, flags = handleAddressGrp(addr, intf, AddressInfoAll, AddrGrpInfoAll, SRouteInfoAll, IntfInfoAll, usedAddress, aI)
+			aSlice, flags = handleAddressGrp(addr, intf, usedAddress, aI)
 		}
 
 		// addrのいずれかでflagsがtrueの場合はFQDNFlagをtrueにする
@@ -63,7 +63,7 @@ func HandleSrcPortOutput(allInfo AllInfo) []string {
 }
 
 // IPPoolが複数割り当てられるパターンは一旦想定しない
-func HandleSrcNATAddressOutPut(natbool bool, poolname, dstintf, env string, ippools []IPPoolInfo, IntfInfoAll []IntfInfo) (string, string) {
+func HandleSrcNATAddressOutPut(natbool bool, poolname, dstintf, dstaddr string, ippools []IPPoolInfo, aI AllInfo) (string, string) {
 	if natbool {
 		if poolname != "" {
 			for _, ipPool := range ippools {
@@ -74,7 +74,7 @@ func HandleSrcNATAddressOutPut(natbool bool, poolname, dstintf, env string, ippo
 				}
 			}
 		} else {
-			poolIP := handleFWIPOutput(dstintf, env, IntfInfoAll)
+			poolIP := handleFWIPOutput(dstintf, dstaddr, aI)
 			return poolIP, ""
 		}
 	}
@@ -113,15 +113,15 @@ func HandleDstNATPortOutput(allInfo AllInfo) []string {
 	return dstNATPortSlice
 }
 
-func HandleDstAddressOutput(intf string, addrs []string, AddressInfoAll []AddressInfo, AddrGrpInfoAll []AddrGrpInfo, SRouteInfoAll []SRouteInfo, IntfInfoAll []IntfInfo, usedAddress []string, allInfo AllInfo) ([]string, bool) {
+func HandleDstAddressOutput(intf string, addrs []string, usedAddress []string, aI AllInfo) ([]string, bool) {
 	var dstAddresss []string
 	var dstFQDNFlag bool
-	protocols := HandleProtocolOutput(allInfo)
-	if allInfo.VInfo != nil {
-		dstAddresss = handleVInfo("dst_addr", allInfo)
+	protocols := HandleProtocolOutput(aI)
+	if aI.VInfo != nil {
+		dstAddresss = handleVInfo("dst_addr", aI)
 	} else {
 		var aSlice []string
-		aSlice, dstFQDNFlag = getUniqueDstAddr(intf, addrs, AddressInfoAll, AddrGrpInfoAll, SRouteInfoAll, IntfInfoAll, usedAddress, allInfo)
+		aSlice, dstFQDNFlag = getUniqueDstAddr(intf, addrs, usedAddress, aI)
 		for _, v := range aSlice {
 			for range protocols {
 				dstAddresss = append(dstAddresss, v)
@@ -239,7 +239,7 @@ func HandleDescriptionOutput(name, ipPoolRange string, srcFQDNFlag, dstFQDNFlag 
 
 func handleRelatedServiceOutPut(p policyInfo, sI []ServiceInfo, ServiceGrpInfoAll []ServiceGrpInfo, IntfInfoAll []IntfInfo, allInfo AllInfo) ([]relatedService, bool) {
 	var relatedServices []relatedService
-	dstAddress, dstFQDNFlag := HandleDstAddressOutput(p.Dstintf, p.DstAddress, AddressInfoAll, AddrGrpInfoAll, SRouteInfoAll, IntfInfoAll, usedAddress, allInfo)
+	dstAddress, dstFQDNFlag := HandleDstAddressOutput(p.Dstintf, p.DstAddress, usedAddress, allInfo)
 	protocols := HandleProtocolOutput(allInfo)
 	srcPorts := HandleSrcPortOutput(allInfo)
 	dstNATAddress := HandleDstNATAddrOutput(allInfo)
@@ -251,15 +251,15 @@ func handleRelatedServiceOutPut(p policyInfo, sI []ServiceInfo, ServiceGrpInfoAl
 	expects := HandleExpectOutput(allInfo)
 
 	if allInfo.VInfo == nil {
-		protocols = appendDataToComponentWithDstAddr(p.Dstintf, p.DstAddress, AddressInfoAll, AddrGrpInfoAll, SRouteInfoAll, IntfInfoAll, usedAddress, protocols, allInfo)
-		srcPorts = appendDataToComponentWithDstAddr(p.Dstintf, p.DstAddress, AddressInfoAll, AddrGrpInfoAll, SRouteInfoAll, IntfInfoAll, usedAddress, srcPorts, allInfo)
-		dstNATAddress = appendDataToComponentWithDstAddr(p.Dstintf, p.DstAddress, AddressInfoAll, AddrGrpInfoAll, SRouteInfoAll, IntfInfoAll, usedAddress, dstNATAddress, allInfo)
-		dstNATPorts = appendDataToComponentWithDstAddr(p.Dstintf, p.DstAddress, AddressInfoAll, AddrGrpInfoAll, SRouteInfoAll, IntfInfoAll, usedAddress, dstNATPorts, allInfo)
-		dstPorts = appendDataToComponentWithDstAddr(p.Dstintf, p.DstAddress, AddressInfoAll, AddrGrpInfoAll, SRouteInfoAll, IntfInfoAll, usedAddress, dstPorts, allInfo)
-		urlDomains = appendDataToComponentWithDstAddr(p.Dstintf, p.DstAddress, AddressInfoAll, AddrGrpInfoAll, SRouteInfoAll, IntfInfoAll, usedAddress, urlDomains, allInfo)
-		antiVirus = appendDataToComponentWithDstAddr(p.Dstintf, p.DstAddress, AddressInfoAll, AddrGrpInfoAll, SRouteInfoAll, IntfInfoAll, usedAddress, antiVirus, allInfo)
-		otherSettings = appendDataToComponentWithDstAddr(p.Dstintf, p.DstAddress, AddressInfoAll, AddrGrpInfoAll, SRouteInfoAll, IntfInfoAll, usedAddress, otherSettings, allInfo)
-		expects = appendDataToComponentWithDstAddr(p.Dstintf, p.DstAddress, AddressInfoAll, AddrGrpInfoAll, SRouteInfoAll, IntfInfoAll, usedAddress, expects, allInfo)
+		protocols = appendDataToComponentWithDstAddr(p.Dstintf, p.DstAddress, usedAddress, protocols, allInfo)
+		srcPorts = appendDataToComponentWithDstAddr(p.Dstintf, p.DstAddress, usedAddress, srcPorts, allInfo)
+		dstNATAddress = appendDataToComponentWithDstAddr(p.Dstintf, p.DstAddress, usedAddress, dstNATAddress, allInfo)
+		dstNATPorts = appendDataToComponentWithDstAddr(p.Dstintf, p.DstAddress, usedAddress, dstNATPorts, allInfo)
+		dstPorts = appendDataToComponentWithDstAddr(p.Dstintf, p.DstAddress, usedAddress, dstPorts, allInfo)
+		urlDomains = appendDataToComponentWithDstAddr(p.Dstintf, p.DstAddress, usedAddress, urlDomains, allInfo)
+		antiVirus = appendDataToComponentWithDstAddr(p.Dstintf, p.DstAddress, usedAddress, antiVirus, allInfo)
+		otherSettings = appendDataToComponentWithDstAddr(p.Dstintf, p.DstAddress, usedAddress, otherSettings, allInfo)
+		expects = appendDataToComponentWithDstAddr(p.Dstintf, p.DstAddress, usedAddress, expects, allInfo)
 	}
 
 	var quantityURL int
@@ -316,21 +316,25 @@ func genScenario(p policyInfo) Scenario {
 		AVProfileInfoAll:  AVProfileInfoAll,
 		ProxyModeProtocol: ProxyModeProtocol,
 		ServicePort:       ServicePort,
+		AddressInfoAll: AddressInfoAll,
+		AddrGrpInfoAll: AddrGrpInfoAll,
+		SRouteInfoAll: SRouteInfoAll,
+		IntfInfoAll: IntfInfoAll,
 	}
 
-	srcAddress, srcFQDNFlag := HandleSrcAddressOutput(p.Srcintf, p.SrcAddress, AddressInfoAll, AddrGrpInfoAll, SRouteInfoAll, IntfInfoAll, usedAddress, allInfo)
+	srcAddress, srcFQDNFlag := HandleSrcAddressOutput(p.Srcintf, p.SrcAddress, usedAddress, allInfo)
 	rS, dstFQDNFlag := handleRelatedServiceOutPut(p, ServiceInfoAll, ServiceGrpInfoAll, IntfInfoAll, allInfo)
-	srcNATAddress, ipPoolRange := HandleSrcNATAddressOutPut(p.NAT, p.PoolName, p.Dstintf, "", IPPoolInfoAll, IntfInfoAll)
+	srcNATAddress, ipPoolRange := HandleSrcNATAddressOutPut(p.NAT, p.PoolName, p.Dstintf, p.DstAddress[0], IPPoolInfoAll, allInfo)
 
 	s := Scenario{
-		SrcFW:            handleFWIPOutput(p.Srcintf, "", IntfInfoAll),
-		SrcVLAN:          handleVLANIDOutput(p.Srcintf, "", IntfInfoAll),
+		SrcFW:            handleFWIPOutput(p.Srcintf, p.SrcAddress[0], allInfo),
+		SrcVLAN:          handleVLANIDOutput(p.Srcintf, p.SrcAddress[0], allInfo),
 		SrcAddress:       srcAddress,
 		SrcNATAddress:    srcNATAddress,
 		SrcIntf:          "",
 		ReceiverPhysical: "",
-		DstFW:            handleFWIPOutput(p.Dstintf, "", IntfInfoAll),
-		DstVLAN:          handleVLANIDOutput(p.Dstintf, "", IntfInfoAll),
+		DstFW:            handleFWIPOutput(p.Dstintf, p.DstAddress[0], allInfo),
+		DstVLAN:          handleVLANIDOutput(p.Dstintf, p.DstAddress[0], allInfo),
 		DstIntf:          "",
 		Timeout:          "",
 		Try:              "",

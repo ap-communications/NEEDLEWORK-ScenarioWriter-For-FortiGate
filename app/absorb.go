@@ -94,7 +94,7 @@ func AbsorbText(text []string, m map[string]bool) {
 			ipPoolStatus = false
 			vipStatus = false
 			vipGrpStatus = false
-			sRouteStatus = false
+			policyStatus = false
 			systemStatus = false
 		}
 
@@ -437,6 +437,35 @@ func AbsorbText(text []string, m map[string]bool) {
 				SRouteInfoAll = append(SRouteInfoAll, sRInfo)
 				sRInfo = SRouteInfo{}
 			}
+
+			// policyのコンフィグより後にSRouteのコンフィグが存在するためここでgenScenario等を行う
+			if v == endCfg {
+				for _, p := range policyInfoAll {
+					// disableポリシーは初期は出力しない
+					if !p.DisableStatus {
+						fmt.Printf("ポリシー名 %+v のシナリオを生成しています\n", p.Name)
+						s := genScenario(p)
+						Scenarios = append(Scenarios, s)
+						fmt.Printf("ポリシー名 %+v のシナリオを生成しました\n\n", p.Name)
+					}
+				}
+
+				// サービスの重複等が考えられるためpolicyStatus毎にリセットする
+				AddressInfoAll = []AddressInfo{}
+				AddrGrpInfoAll = []AddrGrpInfo{}
+				ServiceInfoAll = []ServiceInfo{}
+				ServiceGrpInfoAll = []ServiceGrpInfo{}
+				AVProfileInfoAll = []AVProfileInfo{}
+				WfProfileInfoAll = []WfProfileInfo{}
+				WfFilterInfoAll = []WfFilterInfo{}
+				IPPoolInfoAll = []IPPoolInfo{}
+				VipInfoAll = []VipInfo{}
+				vipGrpInfoAll = []vipGrpInfo{}
+				SRouteInfoAll = []SRouteInfo{}
+				policyInfoAll = []policyInfo{}
+
+				sRouteStatus = false
+			}
 		}
 
 		if policyStatus {
@@ -526,34 +555,6 @@ func AbsorbText(text []string, m map[string]bool) {
 				} else {
 					fmt.Printf("%sは`default`以外のプロトコルオプションを使用しているため出力をスキップします\n", pInfo.Name)
 				}
-			}
-
-			if v == endCfg {
-				for _, p := range policyInfoAll {
-					// disableポリシーは初期は出力しない
-					if !p.DisableStatus {
-						fmt.Printf("ポリシー名 %+v のシナリオを生成しています\n", p.Name)
-						s := genScenario(p)
-						Scenarios = append(Scenarios, s)
-						fmt.Printf("ポリシー名 %+v のシナリオを生成しました\n\n", p.Name)
-					}
-				}
-
-				// サービスの重複等が考えられるためpolicyStatus毎にリセットする
-				AddressInfoAll = []AddressInfo{}
-				AddrGrpInfoAll = []AddrGrpInfo{}
-				ServiceInfoAll = []ServiceInfo{}
-				ServiceGrpInfoAll = []ServiceGrpInfo{}
-				AVProfileInfoAll = []AVProfileInfo{}
-				WfProfileInfoAll = []WfProfileInfo{}
-				WfFilterInfoAll = []WfFilterInfo{}
-				IPPoolInfoAll = []IPPoolInfo{}
-				VipInfoAll = []VipInfo{}
-				vipGrpInfoAll = []vipGrpInfo{}
-				SRouteInfoAll = []SRouteInfo{}
-				policyInfoAll = []policyInfo{}
-
-				policyStatus = false
 			}
 		}
 	}

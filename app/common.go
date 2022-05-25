@@ -1,8 +1,12 @@
 package app
 
 import (
+	"errors"
 	"fmt"
+	"net"
 	"os"
+	"reflect"
+	"strconv"
 	"strings"
 )
 
@@ -26,36 +30,137 @@ var ServicePort = map[string]string{
 	"smtp":  "25",
 }
 
-type AllInfo struct {
-	Services          []string
-	Act               string
-	WfpName           string
-	AvpName           string
-	ServiceInfoAll    []ServiceInfo
-	ServiceGrpInfoAll []ServiceGrpInfo
-	ProxyMode         bool
-	VInfo             []VipInfo
-	VipGrpInfo        []vipGrpInfo
-	WfProfileInfoAll  []WfProfileInfo
-	WfFilterInfoAll   []WfFilterInfo
-	AVProfileInfoAll  []AVProfileInfo
-	ProxyModeProtocol []string
-	ServicePort       map[string]string
-	Env               string
-}
+type (
+	AllInfo struct {
+		Services          []string
+		Act               string
+		WfpName           string
+		AvpName           string
+		ServiceInfoAll    []ServiceInfo
+		ServiceGrpInfoAll []ServiceGrpInfo
+		ProxyMode         bool
+		VInfo             []VipInfo
+		VipGrpInfo        []vipGrpInfo
+		WfProfileInfoAll  []WfProfileInfo
+		WfFilterInfoAll   []WfFilterInfo
+		AVProfileInfoAll  []AVProfileInfo
+		ProxyModeProtocol []string
+		ServicePort       map[string]string
+		Env               string
+		AddressInfoAll    []AddressInfo
+		AddrGrpInfoAll    []AddrGrpInfo
+		SRouteInfoAll     []SRouteInfo
+		IntfInfoAll       []IntfInfo
+	}
+)
 
 // ポリシーで使用されているintfがintf.csvに記載されていない場合にエラーを返す
-func confirmIntfWithIntfInfo(intf, env string, intfInfoAll []IntfInfo) IntfInfo {
+func confirmIntfWithIntfInfo(intf, addr string, aI AllInfo) IntfInfo {
+	var intfInfo IntfInfo
+	switch {
+	case addr == `"all"` && intf == `"any"`:
+		if aI.Env != "test" {
+			fmt.Print(`アドレスが"all"&インターフェースが"any"の場合は値を取得できません` + "\n")
+			fmt.Print("該当ポリシーを削除、またはアドレスかインターフェースのいずれかを指定してください\n")
+			os.Exit(106)
+		}
+	case intf == `"any"`:
+		// ポリシーのインターフェースがanyの時は送信元・宛先で指定されたアドレスのスタティックルーティングを参照する
+		// FQDNはデフォルトゲートウェイに設定されているintfを参照する
+		// addrが複数割り当て＆別のルーティングを参照している場合は現状考慮していない
+		policyIntf := getIntfInfoFromAddressAndSRoute(addr, aI)
+		// 割り出したintfをintf.csvから読み取る
+		intfInfo = getIntfInfo(policyIntf, aI.Env, aI.IntfInfoAll)
+	default:
+		intfInfo = getIntfInfo(intf, aI.Env, aI.IntfInfoAll)
+	}
+
+	if reflect.DeepEqual(intfInfo, IntfInfo{}) {
+		if aI.Env != "test" {
+			fmt.Printf("%sの情報はconfigディレクトリ内の`intf.csv`に記載されていませんでした\n", intf)
+			fmt.Printf("インターフェース名%sの情報をconfigディレクトリ内の`intf.csv`に記載してください\n", intf)
+			os.Exit(103)
+		}
+		return intfInfo
+	}
+	return intfInfo
+}
+
+func getIntfInfoFromAddressAndSRoute(addr string, aI AllInfo) string {
+	// 送信元・宛先で指定されたアドレスのルーティングを参照して使用されているintfを取得する
+	var addrInfo AddressInfo
+	var err error
+	if aI.VInfo != nil {
+		// AddressのみのaddrInfoを作成する
+		addrInfo = AddressInfo{
+			Address: aI.VInfo[0].ExtIP,
+		}
+	} else {
+		addrInfo, err = getAddrInfo(addr, aI.AddressInfoAll)
+		if err != nil {
+			addrGrpInfo := getAddrGrpInfo(addr, aI.AddrGrpInfoAll)
+			if reflect.DeepEqual(addrGrpInfo, AddrGrpInfo{}) {
+				fmt.Printf("%+vは存在しないアドレスが指定されています\n", addr)
+				os.Exit(106)
+			}
+			// Memberが複数割り当て＆別のルーティングを参照している場合は現状考慮していない
+			addrInfo, err = getAddrInfo(addrGrpInfo.Member[0], aI.AddressInfoAll)
+			if err != nil {
+				fmt.Printf("%+vは存在しないアドレスが指定されています\n", addr)
+				os.Exit(106)
+			}
+		}
+	}
+	// 送信元・宛先で指定されたアドレスがスタティックルート&intf.csvのどのルーティングに該当するかチェックする
+	// intfのネットワークはスタティックルートに乗らないのでintf.csvからも取得する
+	// intf.csvのルート情報を全てここで確認する
+	for _, dRoute := range aI.IntfInfoAll {
+		if dRoute.Address != "" && dRoute.SubnetMask != "" {
+			isMatched, intf := getIntfFromNetworkAddr(dRoute.Name, addrInfo.Address, dRoute.Address, dRoute.SubnetMask)
+			if isMatched {
+				return intf
+			}
+		}
+	}
+	// スタティックルートを全てここで確認する
+	for _, route := range aI.SRouteInfoAll {
+		if route.Dst != "" {
+			netaddr := strings.Split(route.Dst, " ")[0]
+			subnetMask := strings.Split(route.Dst, " ")[1]
+			isMatched, intf := getIntfFromNetworkAddr(route.Device, addrInfo.Address, netaddr, subnetMask)
+			if isMatched {
+				fmt.Print("match", intf)
+				return intf
+			}
+		}
+	}
+	// 全てのスタティックルート&intf.csvのルートにマッチしなければデフォルトゲートウェイを利用していると判断する
+	for _, route := range SRouteInfoAll {
+		if route.Dst == "" {
+			return route.Device
+		}
+	}
+	return ""
+}
+
+func getIntfFromNetworkAddr(checkIntf, checkAddr, netAddr, subnetMask string) (bool, string) {
+	_, ipnet, err := convertSubnetMaskToCIDR(netAddr, subnetMask)
+	if err != nil {
+		os.Exit(107)
+	}
+
+	address := net.ParseIP(checkAddr)
+	if ipnet.Contains(address) {
+		return true, checkIntf
+	}
+	return false, checkIntf
+}
+
+func getIntfInfo(intf, env string, intfInfoAll []IntfInfo) IntfInfo {
 	for _, v := range intfInfoAll {
 		if intf == v.Name {
 			return v
 		}
-	}
-
-	fmt.Printf("%sの情報はconfigディレクトリ内の`intf.csv`に記載されていませんでした\n", intf)
-	fmt.Printf("インターフェース名%sの情報をconfigディレクトリ内の`intf.csv`に記載してください\n", intf)
-	if env != "test" {
-		os.Exit(103)
 	}
 	return IntfInfo{}
 }
@@ -235,6 +340,15 @@ func existNWProtocol(serv string) bool {
 		return true
 	}
 	return false
+}
+
+func getAddrInfo(addr string, AddressInfoAll []AddressInfo) (AddressInfo, error) {
+	for _, addressInfo := range AddressInfoAll {
+		if addr == addressInfo.Name {
+			return addressInfo, nil
+		}
+	}
+	return AddressInfo{}, errors.New("failed to get addrInfo")
 }
 
 func getAddrGrpInfo(addr string, AddrGrpInfoAll []AddrGrpInfo) AddrGrpInfo {
@@ -466,11 +580,30 @@ func handleVInfo(component string, aI AllInfo) []string {
 }
 
 // vip以外でdstaddrが複数になる場合にdstaddr以外のデータをdstaddrの種類分増やす
-func appendDataToComponentWithDstAddr(intf string, addrs []string, AddressInfoAll []AddressInfo, AddrGrpInfoAll []AddrGrpInfo, SRouteInfoAll []SRouteInfo, IntfInfoAll []IntfInfo, usedAddress, component []string, allInfo AllInfo) []string {
-	dstSlice, _ := getUniqueDstAddr(intf, addrs, AddressInfoAll, AddrGrpInfoAll, SRouteInfoAll, IntfInfoAll, usedAddress, allInfo)
+func appendDataToComponentWithDstAddr(intf string, addrs []string, usedAddress, component []string, allInfo AllInfo) []string {
+	dstSlice, _ := getUniqueDstAddr(intf, addrs, usedAddress, allInfo)
 	var components []string
 	for range dstSlice {
 		components = append(components, component...)
 	}
 	return components
+}
+
+func convertSubnetMaskToCIDR(addr, subnetMask string) (net.IP, *net.IPNet, error) {
+	var ip net.IP
+	var ipnet *net.IPNet
+	var err error
+	subnet := net.ParseIP(subnetMask)
+	if subnet == nil {
+		return ip, ipnet, errors.New("failed to parse subnet")
+	}
+	mask := net.IPv4Mask(subnet[12], subnet[13], subnet[14], subnet[15])
+	length, _ := mask.Size()
+	ip, ipnet, err = net.ParseCIDR(addr + "/" + strconv.Itoa(length))
+	if err != nil {
+		// この処理はほぼ起こり得ないが念の為ハンドリング
+		fmt.Printf("failed to parse cidr %s\n", err.Error())
+		return ip, ipnet, err
+	}
+	return ip, ipnet, err
 }

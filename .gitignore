@@ -1,5 +1,7 @@
 .DS_Store
+config/intf copy*
 scenario_*.csv
 test.csv
 bin/
 tests/__debug_bin
+NEEDLEWORK-ScenarioWriter-For-FortiGate_v*

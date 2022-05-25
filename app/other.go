@@ -5,7 +5,6 @@ import (
 	"net"
 	"os"
 	"reflect"
-	"strconv"
 	"strings"
 )
 
@@ -129,15 +128,15 @@ var (
 	usedAddress       []string
 )
 
-func getUniqueDstAddr(intf string, addrs []string, AddressInfoAll []AddressInfo, AddrGrpInfoAll []AddrGrpInfo, SRouteInfoAll []SRouteInfo, IntfInfoAll []IntfInfo, usedAddress []string, allInfo AllInfo) ([]string, bool) {
+func getUniqueDstAddr(intf string, addrs []string, usedAddress []string, allInfo AllInfo) ([]string, bool) {
 	var dstUniqueAddress []string
 	var dstFQDNFlag bool
 	for _, addr := range addrs {
 		var aSlice []string
 		var flags bool
-		aSlice, addrBool, flags := handleAddress(addr, intf, AddressInfoAll, SRouteInfoAll, IntfInfoAll, usedAddress, allInfo)
+		aSlice, addrBool, flags := handleAddress(addr, intf, usedAddress, allInfo)
 		if !addrBool {
-			aSlice, flags = handleAddressGrp(addr, intf, AddressInfoAll, AddrGrpInfoAll, SRouteInfoAll, IntfInfoAll, usedAddress, allInfo)
+			aSlice, flags = handleAddressGrp(addr, intf, usedAddress, allInfo)
 		}
 
 		// addrのいずれかでflagsがtrueの場合はFQDNFlagをtrueにする
@@ -149,9 +148,10 @@ func getUniqueDstAddr(intf string, addrs []string, AddressInfoAll []AddressInfo,
 	return dstUniqueAddress, dstFQDNFlag
 }
 
-func handleAddress(addr, intf string, AddressInfoAll []AddressInfo, SRouteInfoAll []SRouteInfo, IntfInfoAll []IntfInfo, usedAddress []string, aI AllInfo) ([]string, bool, bool) {
+// func handleAddress(addr, intf string, AddressInfoAll []AddressInfo, SRouteInfoAll []SRouteInfo, IntfInfoAll []IntfInfo, usedAddress []string, aI AllInfo) ([]string, bool, bool) {
+func handleAddress(addr, intf string, usedAddress []string, aI AllInfo) ([]string, bool, bool) {
 	var addrSlice []string
-	for _, v := range AddressInfoAll {
+	for _, v := range aI.AddressInfoAll {
 		if addr == v.Name && addr != `"all"` {
 			if v.Address != "" && v.SubnetMask == "255.255.255.255" {
 				getUsedIPFromPolicy([]string{v.Address})
@@ -176,7 +176,7 @@ func handleAddress(addr, intf string, AddressInfoAll []AddressInfo, SRouteInfoAl
 	}
 
 	if addr == `"all"` {
-		routes, isExistRoute := getAllRouteIntf(intf, aI.Env, SRouteInfoAll, IntfInfoAll)
+		routes, isExistRoute := getAllRouteIntf(intf, addr, aI)
 		if isExistRoute {
 			// static routeのあるネットワーク内の全てのIPからポリシーにあるIPを除いた始めのIP
 			// intf自身が所属するネットワークアドレスもstatic routeに含む
@@ -201,7 +201,7 @@ func handleAddress(addr, intf string, AddressInfoAll []AddressInfo, SRouteInfoAl
 			}
 		} else {
 			// static routeがない場合は特定のIPを返す
-			appendIP := handleNotExistSRoute(intf, aI.Env, IntfInfoAll)
+			appendIP := handleNotExistSRoute(intf, addr, aI)
 			addrSlice = append(addrSlice, appendIP)
 		}
 		return addrSlice, true, false
@@ -209,22 +209,22 @@ func handleAddress(addr, intf string, AddressInfoAll []AddressInfo, SRouteInfoAl
 	return []string{""}, false, false
 }
 
-func handleAddressGrp(addr, intf string, AddressInfoAll []AddressInfo, AddrGrpInfoAll []AddrGrpInfo, SRouteInfoAll []SRouteInfo, IntfInfoAll []IntfInfo, usedAddress []string, aI AllInfo) ([]string, bool) {
+func handleAddressGrp(addr, intf string, usedAddress []string, aI AllInfo) ([]string, bool) {
 	var fqdnFlags bool
-	addrGrpInfo := getAddrGrpInfo(addr, AddrGrpInfoAll)
+	addrGrpInfo := getAddrGrpInfo(addr, aI.AddrGrpInfoAll)
 	var addrSlice []string
 	for _, m := range addrGrpInfo.Member {
-		subGrpInfo := getAddrGrpInfo(m, AddrGrpInfoAll)
+		subGrpInfo := getAddrGrpInfo(m, aI.AddrGrpInfoAll)
 		if !reflect.DeepEqual(subGrpInfo, AddrGrpInfo{}) {
 			for _, sm := range subGrpInfo.Member {
-				aSlice, _, flags := handleAddress(sm, intf, AddressInfoAll, SRouteInfoAll, IntfInfoAll, usedAddress, aI)
+				aSlice, _, flags := handleAddress(sm, intf, usedAddress, aI)
 				addrSlice = append(addrSlice, aSlice...)
 				if flags {
 					fqdnFlags = true
 				}
 			}
 		} else {
-			aSlice, _, flags := handleAddress(m, intf, AddressInfoAll, SRouteInfoAll, IntfInfoAll, usedAddress, aI)
+			aSlice, _, flags := handleAddress(m, intf, usedAddress, aI)
 			addrSlice = append(addrSlice, aSlice...)
 			if flags {
 				fqdnFlags = true
@@ -234,8 +234,8 @@ func handleAddressGrp(addr, intf string, AddressInfoAll []AddressInfo, AddrGrpIn
 	return addrSlice, fqdnFlags
 }
 
-func handleNotExistSRoute(intf, env string, intfInfoAll []IntfInfo) string {
-	intfInfo := confirmIntfWithIntfInfo(intf, env, IntfInfoAll)
+func handleNotExistSRoute(intf, addr string, aI AllInfo) string {
+	intfInfo := confirmIntfWithIntfInfo(intf, addr, aI)
 	fmt.Printf("%sにはスタティックルートが存在しません\n", intf)
 	if intfInfo.RandomIP != "" {
 		fmt.Printf("%sを出力します\n", intfInfo.RandomIP)
@@ -255,10 +255,10 @@ func handleIncreaseIP(ip net.IP) {
 	}
 }
 
-func getAllRouteIntf(intf, env string, SRouteInfoAll []SRouteInfo, intfInfoAll []IntfInfo) ([]string, bool) {
+func getAllRouteIntf(intf, addr string, aI AllInfo) ([]string, bool) {
 	var routeSlice []string
 	var isExistRoute bool
-	for _, v := range SRouteInfoAll {
+	for _, v := range aI.SRouteInfoAll {
 		if intf == v.Device {
 			// DGWの場合はv.Dstがない
 			// 0.0.0.0/0を全てappendするのはかなり時間がかかるのでappendしない
@@ -272,7 +272,7 @@ func getAllRouteIntf(intf, env string, SRouteInfoAll []SRouteInfo, intfInfoAll [
 	}
 
 	if !isExistRoute {
-		intfInfo := confirmIntfWithIntfInfo(intf, env, intfInfoAll)
+		intfInfo := confirmIntfWithIntfInfo(intf, addr, aI)
 		route := intfInfo.Address + " " + intfInfo.SubnetMask
 		routeSlice = append(routeSlice, route)
 		isExistRoute = true
@@ -281,22 +281,17 @@ func getAllRouteIntf(intf, env string, SRouteInfoAll []SRouteInfo, intfInfoAll [
 }
 
 func getAllIPFromNetwork(addr, subnetMask string) []string {
-	subnet := net.ParseIP(subnetMask)
-	if subnet == nil {
-		return nil
-	}
-	mask := net.IPv4Mask(subnet[12], subnet[13], subnet[14], subnet[15])
-	length, _ := mask.Size()
-	ip, ipnet, err := net.ParseCIDR(addr + "/" + strconv.Itoa(length))
+	ip, ipnet, err := convertSubnetMaskToCIDR(addr, subnetMask)
 	if err != nil {
 		// この処理はほぼ起こり得ないが念の為ハンドリング
-		fmt.Printf("failed to parse cidr %s", err.Error())
-		return []string{""}
+		fmt.Printf("failed to parse cidr %s\n", err.Error())
 	}
 	var ips []string
-	for ip := ip.Mask(ipnet.Mask); ipnet.Contains(ip); handleIncreaseIP(ip) {
-		// ipsはipnet内の全てのアドレスが格納されている
-		ips = append(ips, ip.String())
+	if ip != nil && ipnet != nil {
+		for ip := ip.Mask(ipnet.Mask); ipnet.Contains(ip); handleIncreaseIP(ip) {
+			// ipsはipnet内の全てのアドレスが格納されている
+			ips = append(ips, ip.String())
+		}	
 	}
 	return ips
 }

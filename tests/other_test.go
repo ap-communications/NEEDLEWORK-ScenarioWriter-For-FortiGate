@@ -13,17 +13,20 @@ type addrArgs struct {
 	addrs             []string
 	services          []string
 	vInfo             []app.VipInfo
-	AddressInfoAll    []app.AddressInfo
-	AddrGrpInfoAll    []app.AddrGrpInfo
 	ServiceInfoAll    []app.ServiceInfo
 	ServiceGrpInfoAll []app.ServiceGrpInfo
-	SRouteInfoAll     []app.SRouteInfo
-	IntfInfoAll       []app.IntfInfo
 	usedAddress       []string
 	allInfo           app.AllInfo
 }
 
 var (
+	testDefaultAllInfo = app.AllInfo{
+		Env:            "test",
+		AddressInfoAll: testAddrInfoAll,
+		AddrGrpInfoAll: testAddrGrpInfoAll,
+		SRouteInfoAll:  testSRouteInfoAll,
+		IntfInfoAll:    testIntfInfoAll,
+	}
 	testAddrInfoAll = []app.AddressInfo{
 		{
 			Name:       "iprange",
@@ -474,8 +477,6 @@ var (
 	testAddr1 = addrArgs{
 		addrs:          []string{"8.8.8.8"},
 		services:       []string{`"ALL"`},
-		AddressInfoAll: testAddrInfoAll,
-		AddrGrpInfoAll: nil,
 		allInfo: app.AllInfo{
 			Services:          []string{`"ALL"`},
 			ServiceInfoAll:    testServiceInfoAll,
@@ -488,14 +489,16 @@ var (
 			ProxyModeProtocol: nil,
 			ServicePort:       nil,
 			Env:               "test",
+			AddressInfoAll:    testAddrInfoAll,
+			AddrGrpInfoAll:    nil,
+			SRouteInfoAll: testSRouteInfoAll,
+			IntfInfoAll: app.IntfInfoAll,
 		},
 	}
 	testAddr2 = addrArgs{
 		addrs:             []string{"192.168.111.0/24"},
 		services:          []string{`"SMTP"`},
 		vInfo:             nil,
-		AddressInfoAll:    testAddrInfoAll,
-		AddrGrpInfoAll:    testAddrGrpInfoAll,
 		ServiceInfoAll:    testServiceInfoAll,
 		ServiceGrpInfoAll: testServiceGrpInfoAll,
 		allInfo: app.AllInfo{
@@ -510,13 +513,15 @@ var (
 			ProxyModeProtocol: nil,
 			ServicePort:       nil,
 			Env:               "test",
+			AddressInfoAll:    testAddrInfoAll,
+			AddrGrpInfoAll:    testAddrGrpInfoAll,
+			SRouteInfoAll: testSRouteInfoAll,
+			IntfInfoAll: app.IntfInfoAll,
 		},
 	}
 	testAddr3 = addrArgs{
 		addrs:             []string{"iprange"},
 		services:          []string{`"IMAP"`, `"FTP"`},
-		AddressInfoAll:    testAddrInfoAll,
-		AddrGrpInfoAll:    nil,
 		ServiceInfoAll:    testServiceInfoAll,
 		ServiceGrpInfoAll: testServiceGrpInfoAll,
 		allInfo: app.AllInfo{
@@ -531,13 +536,15 @@ var (
 			ProxyModeProtocol: nil,
 			ServicePort:       nil,
 			Env:               "test",
+			AddressInfoAll:    testAddrInfoAll,
+			AddrGrpInfoAll:    nil,
+			SRouteInfoAll: testSRouteInfoAll,
+			IntfInfoAll: app.IntfInfoAll,
 		},
 	}
 	testAddr4 = addrArgs{
 		addrs:             []string{"local.test.com"},
 		services:          []string{`"ALL_TCP"`},
-		AddressInfoAll:    testAddrInfoAll,
-		AddrGrpInfoAll:    testAddrGrpInfoAll,
 		ServiceInfoAll:    testServiceInfoAll,
 		ServiceGrpInfoAll: testServiceGrpInfoAll,
 		allInfo: app.AllInfo{
@@ -552,13 +559,15 @@ var (
 			ProxyModeProtocol: nil,
 			ServicePort:       nil,
 			Env:               "test",
+			AddressInfoAll:    testAddrInfoAll,
+			AddrGrpInfoAll:    testAddrGrpInfoAll,
+			SRouteInfoAll: testSRouteInfoAll,
+			IntfInfoAll: app.IntfInfoAll,
 		},
 	}
 	testAddr5 = addrArgs{
 		addrs:             []string{`"testgrp"`},
 		services:          []string{`"ALL_UDP"`},
-		AddressInfoAll:    testAddrInfoAll,
-		AddrGrpInfoAll:    testAddrGrpInfoAll,
 		ServiceInfoAll:    testServiceInfoAll,
 		ServiceGrpInfoAll: testServiceGrpInfoAll,
 		allInfo: app.AllInfo{
@@ -573,13 +582,15 @@ var (
 			ProxyModeProtocol: nil,
 			ServicePort:       nil,
 			Env:               "test",
+			AddressInfoAll:    testAddrInfoAll,
+			AddrGrpInfoAll:    testAddrGrpInfoAll,
+			SRouteInfoAll: testSRouteInfoAll,
+			IntfInfoAll: app.IntfInfoAll,
 		},
 	}
 	testAddr6 = addrArgs{
 		addrs:             []string{"192.168.1.100", "192.168.113.128/28"},
 		services:          []string{`"Servicegrp"`},
-		AddressInfoAll:    testAddrInfoAll,
-		AddrGrpInfoAll:    testAddrGrpInfoAll,
 		ServiceInfoAll:    testServiceInfoAll,
 		ServiceGrpInfoAll: testServiceGrpInfoAll,
 		allInfo: app.AllInfo{
@@ -594,16 +605,16 @@ var (
 			ProxyModeProtocol: nil,
 			ServicePort:       nil,
 			Env:               "test",
+			AddressInfoAll:    testAddrInfoAll,
+			AddrGrpInfoAll:    testAddrGrpInfoAll,
+			SRouteInfoAll: testSRouteInfoAll,
+			IntfInfoAll: app.IntfInfoAll,
 		},
 	}
 	testAddr7 = addrArgs{
 		intf:           `"wan2"`,
 		addrs:          []string{`"all"`},
 		services:       []string{`"ALL"`},
-		AddressInfoAll: testAddrInfoAll,
-		AddrGrpInfoAll: testAddrGrpInfoAll,
-		SRouteInfoAll:  testSRouteInfoAll,
-		IntfInfoAll:    testIntfInfoAll,
 		usedAddress:    nil,
 		allInfo: app.AllInfo{
 			Services:          []string{`"ALL"`},
@@ -617,16 +628,16 @@ var (
 			ProxyModeProtocol: nil,
 			ServicePort:       nil,
 			Env:               "test",
+			AddressInfoAll:    testAddrInfoAll,
+			AddrGrpInfoAll:    testAddrGrpInfoAll,
+			SRouteInfoAll: testSRouteInfoAll,
+			IntfInfoAll: app.IntfInfoAll,
 		},
 	}
 	testAddr8 = addrArgs{
 		intf:           `"not_exist_intf"`,
 		addrs:          []string{`"all"`},
 		services:       []string{`"ALL"`},
-		AddressInfoAll: testAddrInfoAll,
-		AddrGrpInfoAll: testAddrGrpInfoAll,
-		SRouteInfoAll:  testSRouteInfoAll,
-		IntfInfoAll:    testIntfInfoAll,
 		usedAddress:    nil,
 		allInfo: app.AllInfo{
 			Services:          []string{`"ALL"`},
@@ -640,6 +651,10 @@ var (
 			ProxyModeProtocol: nil,
 			ServicePort:       nil,
 			Env:               "test",
+			AddressInfoAll:    testAddrInfoAll,
+			AddrGrpInfoAll:    testAddrGrpInfoAll,
+			SRouteInfoAll: testSRouteInfoAll,
+			IntfInfoAll: app.IntfInfoAll,
 		},
 	}
 )
@@ -765,15 +780,15 @@ func TestHandleSrcAddressOutput(t *testing.T) {
 			want1: false,
 		},
 		{
-			name: "all_not_exist_intf",
-			args: testAddr8,
-			want: nil,
+			name:  "all_not_exist_intf",
+			args:  testAddr8,
+			want:  nil,
 			want1: false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, got1 := app.HandleSrcAddressOutput(tt.args.intf, tt.args.addrs, tt.args.AddressInfoAll, tt.args.AddrGrpInfoAll, tt.args.SRouteInfoAll, tt.args.IntfInfoAll, tt.args.usedAddress, tt.args.allInfo)
+			got, got1 := app.HandleSrcAddressOutput(tt.args.intf, tt.args.addrs, tt.args.usedAddress, tt.args.allInfo)
 			if !reflect.DeepEqual(got, tt.want) {
 				fmt.Printf("got = %+v\n", got)
 				fmt.Printf("want = %+v\n", tt.want)
@@ -837,9 +852,9 @@ func TestHandleDstAddressOutput(t *testing.T) {
 			want1: false,
 		},
 		{
-			name: "all_not_exist_intf",
-			args: testAddr8,
-			want: nil,
+			name:  "all_not_exist_intf",
+			args:  testAddr8,
+			want:  nil,
 			want1: false,
 		},
 		{
@@ -848,8 +863,6 @@ func TestHandleDstAddressOutput(t *testing.T) {
 				addrs:             []string{"vip_normal2"},
 				services:          []string{`"DNS"`},
 				vInfo:             testVInfo2,
-				AddressInfoAll:    nil,
-				AddrGrpInfoAll:    nil,
 				ServiceInfoAll:    testServiceInfoAll,
 				ServiceGrpInfoAll: nil,
 				allInfo: app.AllInfo{
@@ -857,7 +870,6 @@ func TestHandleDstAddressOutput(t *testing.T) {
 					ServiceInfoAll:    testServiceInfoAll,
 					ServiceGrpInfoAll: nil,
 					ProxyMode:         true,
-
 					VInfo: testVInfo2,
 				},
 			},
@@ -870,8 +882,6 @@ func TestHandleDstAddressOutput(t *testing.T) {
 				addrs:             []string{"op_service", "op_portforward"},
 				services:          []string{`"ALL_TCP"`},
 				vInfo:             testVInfo3,
-				AddressInfoAll:    nil,
-				AddrGrpInfoAll:    nil,
 				ServiceInfoAll:    testServiceInfoAll,
 				ServiceGrpInfoAll: nil,
 				allInfo: app.AllInfo{
@@ -879,7 +889,6 @@ func TestHandleDstAddressOutput(t *testing.T) {
 					ServiceInfoAll:    testServiceInfoAll,
 					ServiceGrpInfoAll: nil,
 					ProxyMode:         true,
-
 					VInfo: testVInfo3,
 				},
 			},
@@ -892,8 +901,6 @@ func TestHandleDstAddressOutput(t *testing.T) {
 				addrs:             []string{"virtual-ip-group1"},
 				services:          []string{`"ALL"`},
 				vInfo:             testVInfo,
-				AddressInfoAll:    nil,
-				AddrGrpInfoAll:    nil,
 				ServiceInfoAll:    testServiceInfoAll,
 				ServiceGrpInfoAll: nil,
 				allInfo: app.AllInfo{
@@ -901,8 +908,7 @@ func TestHandleDstAddressOutput(t *testing.T) {
 					ServiceInfoAll:    testServiceInfoAll,
 					ServiceGrpInfoAll: nil,
 					ProxyMode:         true,
-
-					VInfo: testVInfo,
+					VInfo:             testVInfo,
 				},
 			},
 			want:  []string{"172.16.0.201", "172.16.0.201", "172.16.0.201", "172.16.0.201", "172.16.0.201", "172.16.0.201", "172.16.0.201", "172.16.0.201", "172.16.0.201", "172.16.0.201", "172.16.0.201", "200.200.200.210", "200.200.200.210", "200.200.200.200"},
@@ -911,7 +917,7 @@ func TestHandleDstAddressOutput(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, got1 := app.HandleDstAddressOutput(tt.args.intf, tt.args.addrs, tt.args.AddressInfoAll, tt.args.AddrGrpInfoAll, tt.args.SRouteInfoAll, tt.args.IntfInfoAll, tt.args.usedAddress, tt.args.allInfo)
+			got, got1 := app.HandleDstAddressOutput(tt.args.intf, tt.args.addrs, tt.args.usedAddress, tt.args.allInfo)
 			if !reflect.DeepEqual(got, tt.want) {
 				fmt.Printf("got = %+v\n", got)
 				fmt.Printf("want = %+v\n", tt.want)
@@ -927,11 +933,12 @@ func TestHandleDstAddressOutput(t *testing.T) {
 
 func Test_HandleSrcNATAddressOutPut(t *testing.T) {
 	type args struct {
-		natbool     bool
-		poolname    string
-		dstintf     string
-		ippools     []app.IPPoolInfo
-		IntfInfoAll []app.IntfInfo
+		natbool  bool
+		poolname string
+		dstintf  string
+		dstaddr  string
+		ippools  []app.IPPoolInfo
+		allInfo app.AllInfo
 	}
 	tests := []struct {
 		name  string
@@ -942,11 +949,11 @@ func Test_HandleSrcNATAddressOutPut(t *testing.T) {
 		{
 			name: "false natbool",
 			args: args{
-				natbool:     false,
-				poolname:    "",
-				dstintf:     "wan1",
-				ippools:     testIPPoolInfoAll,
-				IntfInfoAll: testIntfInfoAll,
+				natbool:  false,
+				poolname: "",
+				dstintf:  "wan1",
+				ippools:  testIPPoolInfoAll,
+				allInfo:  testDefaultAllInfo,
 			},
 			want:  "",
 			want1: "",
@@ -954,11 +961,11 @@ func Test_HandleSrcNATAddressOutPut(t *testing.T) {
 		{
 			name: "no exist poolname",
 			args: args{
-				natbool:     false,
-				poolname:    "hogefuga",
-				dstintf:     "wan1",
-				ippools:     testIPPoolInfoAll,
-				IntfInfoAll: testIntfInfoAll,
+				natbool:  false,
+				poolname: "hogefuga",
+				dstintf:  "wan1",
+				ippools:  testIPPoolInfoAll,
+				allInfo:  testDefaultAllInfo,
 			},
 			want:  "",
 			want1: "",
@@ -966,11 +973,11 @@ func Test_HandleSrcNATAddressOutPut(t *testing.T) {
 		{
 			name: "dst intf",
 			args: args{
-				natbool:     true,
-				poolname:    "",
-				dstintf:     "wan1",
-				ippools:     testIPPoolInfoAll,
-				IntfInfoAll: testIntfInfoAll,
+				natbool:  true,
+				poolname: "",
+				dstintf:  "wan1",
+				ippools:  testIPPoolInfoAll,
+				allInfo:  testDefaultAllInfo,
 			},
 			want:  "10.10.10.1",
 			want1: "",
@@ -978,11 +985,11 @@ func Test_HandleSrcNATAddressOutPut(t *testing.T) {
 		{
 			name: "1on1",
 			args: args{
-				natbool:     true,
-				poolname:    "1on1",
-				dstintf:     "",
-				ippools:     testIPPoolInfoAll,
-				IntfInfoAll: testIntfInfoAll,
+				natbool:  true,
+				poolname: "1on1",
+				dstintf:  "",
+				ippools:  testIPPoolInfoAll,
+				allInfo:  testDefaultAllInfo,
 			},
 			want:  "2.2.2.2",
 			want1: "2.2.2.2-2.2.2.4",
@@ -990,11 +997,11 @@ func Test_HandleSrcNATAddressOutPut(t *testing.T) {
 		{
 			name: "fix_port_range",
 			args: args{
-				natbool:     true,
-				poolname:    "fix_port_range",
-				dstintf:     "",
-				ippools:     testIPPoolInfoAll,
-				IntfInfoAll: testIntfInfoAll,
+				natbool:  true,
+				poolname: "fix_port_range",
+				dstintf:  "",
+				ippools:  testIPPoolInfoAll,
+				allInfo:  testDefaultAllInfo,
 			},
 			want:  "3.3.3.3",
 			want1: "3.3.3.3-3.3.3.33",
@@ -1002,11 +1009,11 @@ func Test_HandleSrcNATAddressOutPut(t *testing.T) {
 		{
 			name: "port_block_assign",
 			args: args{
-				natbool:     true,
-				poolname:    "port_block_assign",
-				dstintf:     "",
-				ippools:     testIPPoolInfoAll,
-				IntfInfoAll: testIntfInfoAll,
+				natbool:  true,
+				poolname: "port_block_assign",
+				dstintf:  "",
+				ippools:  testIPPoolInfoAll,
+				allInfo:  testDefaultAllInfo,
 			},
 			want:  "6.6.6.6",
 			want1: "6.6.6.6-6.6.6.66",
@@ -1014,7 +1021,7 @@ func Test_HandleSrcNATAddressOutPut(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, got1 := app.HandleSrcNATAddressOutPut(tt.args.natbool, tt.args.poolname, tt.args.dstintf, "test", tt.args.ippools, tt.args.IntfInfoAll)
+			got, got1 := app.HandleSrcNATAddressOutPut(tt.args.natbool, tt.args.poolname, tt.args.dstintf, tt.args.dstaddr, tt.args.ippools, tt.args.allInfo)
 			if got != tt.want {
 				fmt.Printf("got = %+v\n", got)
 				fmt.Printf("want = %+v\n", tt.want)
