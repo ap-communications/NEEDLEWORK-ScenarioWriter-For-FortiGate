@@ -43,9 +43,7 @@ https://github.com/ap-communications/NEEDLEWORK-ScenarioWriter-For-FortiGate/blo
 # 本ツールの使用方法
 
 ### 動作イメージ
-
-images/ScenarioWriter-For-FortiGate_operation_image.mp4
-
+https://user-images.githubusercontent.com/4498592/178413676-74e44814-5f04-4ef0-9f8a-f55442927eea.mp4
 
 ## 使用方法概要
 
