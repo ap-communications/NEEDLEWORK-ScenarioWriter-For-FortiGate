@@ -9,16 +9,16 @@
 サポートはベストエフォートとなり、動作を保証するものではないことをあらかじめご了承願います。<br>
 
 また、本ツールにプログラミング上の誤りその他の瑕疵のないこと、<br>
-本ツールが特定目的に適合すること並びに本ツール及びその利用が<br>利用者または第三者の権利を侵害するものでないこと、<br>
-その他いかなる内容の保証も行うものではありません。本ツールに関して発生するいかなる問題も、 <br>
-利用者の責任及び費用負担により解決されるものとします。<br>
+本ツールが特定目的に適合すること並びに本ツール及びその利用が利用者または第三者の権利を侵害するものでないこと、<br>
+その他いかなる内容の保証も行うものではありません。
+本ツールに関して発生するいかなる問題も利用者の責任及び費用負担により解決されるものとします。<br>
 
 # 本ツールについて
 
-本ツールはファイアウォールのコンフィグファイルから[NEEDLEWORK](https://www.ap-com.co.jp/ja/needlework/)で<br>使用できるcsv(シナリオ)を生成するツールです。<br>以下のファイアウォールに対応しています。
+本ツールはファイアウォールのコンフィグファイルから[NEEDLEWORK](https://www.ap-com.co.jp/ja/needlework/)で<br>使用するcsv(テストシナリオ)を生成するツールです。<br>以下のファイアウォールに対応しています。
 
 * Fortinet FortiGate <br>
-  ※動作確認バージョン：6.0.6, 6.2.10
+  ※動作確認バージョン：6.0.6, 6.2.10（その他バージョンは動作未検証）
 
 ※ Juniper SSG5の場合は下記のツールをご利用ください。 <br>
 https://github.com/ap-communications/NEEDLEWORK-ScenarioWriter
@@ -42,7 +42,26 @@ https://github.com/ap-communications/NEEDLEWORK-ScenarioWriter-For-FortiGate/blo
 
 # 本ツールの使用方法
 
-本ツールの利用方法は以下の通りです。<br>
+### 動作イメージ
+https://user-images.githubusercontent.com/4498592/178413676-74e44814-5f04-4ef0-9f8a-f55442927eea.mp4
+
+## 使用方法概要
+
+![](images/FortiGate_overview.png)
+
+FortiGateのコンフィグとintf.csv（FortiGateの構成情報を記載したCSV。詳細は後述。）を用意します。<br>
+FortiGateのコンフィグを本ツールにインポート（コマンドの引数として指定します）してツールを実行します。<br>
+※intf.csvは特定のディレクトリ（ツール保存ディレクトリ配下）から自動的に読み込まれます
+
+```
+コマンド例：
+C:\Users\apc> NEEDLEWORK-ScenarioWriter-For-FortiGate.exe C:\tools\fortigate.conf
+```
+
+NEEDLEWORKのポリシーテストシナリオ（CSV）が出力されます。
+
+<br><br>
+本ツールの利用方法詳細は以下の通りです。<br>
 
 ## 動作環境
 
@@ -55,17 +74,24 @@ https://github.com/ap-communications/NEEDLEWORK-ScenarioWriter-For-FortiGate/blo
     https://github.com/ap-communications/NEEDLEWORK-ScenarioWriter-For-FortiGate/releases
 2. ダウンロードしたzipファイルを解凍し、出力されたディレクトリを任意のディレクトリに移動します。 <br>
    ※解凍ディレクトリの中にexeファイルが格納されています
-3. configディレクトリ内の`intf.csv`に下記必要情報を記載します。<br>
+3. configディレクトリ内の`intf.csv`に必要情報を記載します。<br>
   複数のインターフェースを使用している場合は、インターフェースの数分記載をお願いいたします。<br>
+
+### intf.csv記載方法
+以下の情報を記載します。<br>
+intf.csvとFortiGateコンフィグの内容を突合し、出力するテストシナリオのFW-IP、VLANの値を求めています。<br>
   * FortiGateのインターフェース名
   * インターフェースのIPアドレス
   * インターフェースのサブネットマスク
-  * インターフェースのVLAN ID<br>
-  なお、configディレクトリ内の`intf.csv`の内容をもとにシナリオを生成しているため、<br>下記を参考に正しい値を記載してください。<br>
-   * インターフェースのIPアドレス: `A.B.C.D`の形式かつ正常なIPアドレス
-   * インターフェースのサブネットマスク: `A.B.C.D`の形式かつ正常なサブネットマスク
-   * インターフェースのVLAN ID: `0~4094`のいずれか
-<br>以下のネットワーク構成図とインターフェース設定画面である場合、<br>
+  * インターフェースのVLAN ID<br><br>
+  
+`intf.csv`の内容をもとにシナリオを生成しているため、<br>下記を参考に正しいフォーマット・値を記載してください。<br>
+* インターフェースのIPアドレス: `A.B.C.D`の形式かつ正常なIPアドレス
+* インターフェースのサブネットマスク: `A.B.C.D`の形式かつ正常なサブネットマスク
+* インターフェースのVLAN ID: `0~4094`のいずれか
+
+**記載例**
+以下のネットワーク構成、インターフェース設定の場合、<br>
 次のようにconfigディレクトリ内の`intf.csv`を記載します。 <br><br>
 FortiGateのネットワーク構成図<br>
 ![a](images/FortiGate_network_configuration_diagram.png)
@@ -73,7 +99,7 @@ FortiGateのネットワーク構成図<br>
 FortiGateのインターフェースの設定画面<br>
 ![b](images/FortiGate_intf_settings.png)
 
-configディレクトリ内の`intf.csv`の記載例:<br>
+`intf.csv`（configディレクトリ内に保存）の記載例:<br>
 ※ エイリアスを設定しているインターフェースは元のインターフェース名のみを記載してください。<br>
 ```
 inftname,address,subnetmask,vlanid
@@ -83,34 +109,6 @@ VLAN20,20.20.20.254,255.255.255.0,20
 lan2,10.0.0.254,255.255.255.0
 VLAN110,110.110.110.254,255.255.255.0,110
 VLAN120,120.120.120.254,255.255.255.0,120
-```
-
-**記載理由について**<br>
-NEEDLEWORKのシナリオを生成するために、FortiGateが送受信に利用する<br>
-インターフェースのIPアドレス、サブネットマスク、VLAN IDを知る必要があります。<br>
-現状、本ツールはFortigateのコンフィグファイル（.conf）内のポリシーから<br>
-シナリオを生成するので、`送受信インタフェース名`しか取得できません。<br>
-そのため、本ツールに`インターフェース名,IP,サブネットマスク,VLAN`の組み合わせを<br>
-渡すために`intf.csv`を適切に記載する必要があります。<br>
-
-**ポリシー例**
-```
-    edit 7
-        set name "flow002-utm"
-        set uuid 2fb2fcc2-a377-51ec-e2fb-7af703ebb1d6
-        set srcintf "VLAN10"★⇛ここをFWインターフェースのIPと、VLAN IDに変換し、NEEDLEWORKのシナリオとして書き込む
-        set dstintf "VLAN110"★⇛ここをFWインターフェースのIPと、VLAN IDに変換し、NEEDLEWORKのシナリオとして書き込む
-        set srcaddr "10.10.10.101"
-        set dstaddr "110.110.110.101"
-        set action accept
-        set schedule "always"
-        set service "ALL"
-        set utm-status enable
-        set ssl-ssh-profile "certificate-inspection"
-        set av-profile "g-default"
-        set webfilter-profile "NEEDLEWORK-test"
-        set logtraffic all
-    next
 ```
 
 ## 実行手順
@@ -149,7 +147,7 @@ https://support.needlework.jp/manual/
 
 # FAQ等
 
-* 生成されたシナリオでTCP関連のプロトコルのシナリオがDropします。
+* 生成されたシナリオでTCP関連のプロトコルのシナリオがDropになってしまいます。
     * FortiGateがTCPの通信をプロキシし、NEEDLEWORKのテスト結果がDropになる場合があります。<br>
     シナリオのその他設定に`Proxy mode`を指定し、再度テストの実行をお願いします。<br>
     * 現在、下記の条件1, 条件2, 条件3の全てに該当している場合,上記事象を確認しています。<br>
