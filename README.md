@@ -42,17 +42,22 @@ https://github.com/ap-communications/NEEDLEWORK-ScenarioWriter-For-FortiGate/blo
 
 # 本ツールの使用方法
 
+### 動作イメージ
+
+images/ScenarioWriter-For-FortiGate_operation_image.mp4
+
+
 ## 使用方法概要
 
 ![](images/FortiGate_overview.png)
 
-FortiGateのコンフィグとintf.csv（FortiGateの構成情報を記載したCSV。詳細は後述。）を <br>
-本ツールにインポート（コマンドの引数として指定します）してツールを実行します。
+FortiGateのコンフィグとintf.csv（FortiGateの構成情報を記載したCSV。詳細は後述。）を用意します。<br>
+FortiGateのコンフィグを本ツールにインポート（コマンドの引数として指定します）してツールを実行します。<br>
+※intf.csvは特定のディレクトリ（ツール保存ディレクトリ配下）から自動的に読み込まれます
 
 ```
 コマンド例：
 C:\Users\apc> NEEDLEWORK-ScenarioWriter-For-FortiGate.exe C:\tools\fortigate.conf
-※intf.csvは特定のディレクトリ（ツール保存ディレクトリ配下）から自動的に読み込まれます
 ```
 
 NEEDLEWORKのポリシーテストシナリオ（CSV）が出力されます。
